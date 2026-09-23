@@ -32,7 +32,7 @@ export default function LoginPage() {
 				<Link href="/" className="mx-auto mb-7 flex w-fit items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]">
 					<ArrowLeft size={16} /> กลับหน้าหลัก
 				</Link>
-				<section className="rounded-[2rem] border border-[#e4e8e1] bg-white p-7 shadow-[0_24px_70px_rgba(36,67,57,0.1)] sm:p-10">
+				<section className="rounded-4xl border border-[#e4e8e1] bg-white p-7 shadow-[0_24px_70px_rgba(36,67,57,0.1)] sm:p-10">
 					<div className="flex size-14 items-center justify-center rounded-2xl bg-[#18302b] text-[#f1bd5d]"><HeartHandshake size={27} /></div>
 					<p className="mt-8 text-xs font-bold uppercase tracking-[0.14em] text-[#789087]">Care Companion</p>
 					<h1 className="mt-3 text-4xl font-semibold tracking-[-0.06em]">ยินดีต้อนรับกลับมา</h1>
