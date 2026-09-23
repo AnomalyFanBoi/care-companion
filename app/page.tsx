@@ -11,6 +11,7 @@ import {
 	Sparkles,
 	Users,
 } from "lucide-react";
+import Link from "next/link";
 
 const customerBenefits = [
 	"มีเพื่อนร่วมทางที่ไว้ใจได้ในวันที่ต้องการความช่วยเหลือ",
@@ -34,12 +35,12 @@ export default function Home() {
 	return (
 		<main className="overflow-hidden bg-[#f8f8f4] text-[#18302b]">
 			<header className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
-				<a href="#top" className="flex items-center gap-3" aria-label="Care Companion หน้าหลัก">
+				<Link href="#top" className="flex items-center gap-3" aria-label="Care Companion หน้าหลัก">
 					<span className="flex size-10 items-center justify-center rounded-2xl bg-[#18302b] text-[#f5c76b] shadow-sm">
 						<HeartHandshake size={21} strokeWidth={2.2} />
 					</span>
 					<span className="text-lg font-semibold tracking-[-0.03em]">Care Companion</span>
-				</a>
+				</Link>
 
 				<nav className="order-3 flex w-full items-center justify-center gap-5 overflow-x-auto text-sm font-medium text-[#63746e] md:order-none md:w-auto md:gap-8" aria-label="เมนูหลัก">
 					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="#how-it-works">วิธีใช้งาน</a>
@@ -47,10 +48,10 @@ export default function Home() {
 					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="#benefits">สำหรับ Companion</a>
 				</nav>
 
-				<a href="#get-started" className="inline-flex items-center gap-2 rounded-full bg-[#f1bd5d] px-4 py-3 text-xs font-semibold text-[#18302b] shadow-[0_4px_0_#d99e43] transition-transform hover:-translate-y-0.5 sm:px-5 sm:text-sm">
+				<Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-[#f1bd5d] px-4 py-3 text-xs font-semibold text-[#18302b] shadow-[0_4px_0_#d99e43] transition-transform hover:-translate-y-0.5 sm:px-5 sm:text-sm">
 					เข้าสู่ระบบด้วย Google Account
 					<ArrowRight size={16} />
-				</a>
+				</Link>
 			</header>
 
 			<section id="top" className="mx-auto grid w-full max-w-7xl gap-14 px-5 pb-20 pt-14 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-10 lg:pb-28 lg:pt-20">
@@ -151,7 +152,7 @@ export default function Home() {
 				<div className="mx-auto flex max-w-7xl flex-col gap-10 px-5 py-16 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10 lg:py-20"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#789087]">เราอาจช่วยคุณได้ที่นี่</p><h2 className="mt-4 max-w-xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">สถานที่ในชีวิตประจำวัน อุ่นใจขึ้นเมื่อมีใครไปด้วย</h2></div><div className="grid w-full max-w-xl gap-3 sm:grid-cols-3">{useCases.map(({ icon: Icon, label, detail }) => <div key={label} className="rounded-2xl bg-white p-4"><span className="flex size-10 items-center justify-center rounded-xl bg-[#dceee7] text-[#467267]"><Icon size={19} /></span><p className="mt-5 text-sm font-semibold">{label}</p><p className="mt-2 text-xs leading-5 text-[#789087]">{detail}</p></div>)}</div></div>
 			</section>
 
-			<section id="get-started" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"><div className="relative overflow-hidden rounded-[2.5rem] bg-[#dceee7] px-7 py-12 sm:px-12 sm:py-16"><div className="relative z-10 max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#467267]">เริ่มต้นสร้างวันที่ง่ายขึ้น</p><h2 className="mt-5 text-4xl font-semibold leading-tight tracking-[-0.05em] sm:text-6xl">ก้าวต่อไปของคุณ มีเราอยู่ข้าง ๆ</h2><p className="mt-5 max-w-lg text-lg leading-8 text-[#53625e]">ทำความรู้จัก Care Companion แพลตฟอร์มที่ช่วยเชื่อมต่อผู้ต้องการความช่วยเหลือกับ Companion ที่พร้อมร่วมเดินทาง</p><a href="#top" className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#18302b] px-6 py-4 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">เข้าสู่ระบบด้วย Google Account <ArrowRight size={17} /></a></div><div className="absolute -bottom-24 -right-12 size-64 rounded-full border-[36px] border-[#f1bd5d] opacity-70 sm:size-80" /></div></section>
+			<section id="get-started" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"><div className="relative overflow-hidden rounded-[2.5rem] bg-[#dceee7] px-7 py-12 sm:px-12 sm:py-16"><div className="relative z-10 max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#467267]">เริ่มต้นสร้างวันที่ง่ายขึ้น</p><h2 className="mt-5 text-4xl font-semibold leading-tight tracking-[-0.05em] sm:text-6xl">ก้าวต่อไปของคุณ มีเราอยู่ข้าง ๆ</h2><p className="mt-5 max-w-lg text-lg leading-8 text-[#53625e]">ทำความรู้จัก Care Companion แพลตฟอร์มที่ช่วยเชื่อมต่อผู้ต้องการความช่วยเหลือกับ Companion ที่พร้อมร่วมเดินทาง</p><a href="/login" className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#18302b] px-6 py-4 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">เข้าสู่ระบบด้วย Google Account <ArrowRight size={17} /></a></div><div className="absolute -bottom-24 -right-12 size-64 rounded-full border-[36px] border-[#f1bd5d] opacity-70 sm:size-80" /></div></section>
 
 			<footer className="border-t border-[#dfe3dc] px-5 py-8 sm:px-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-3 text-sm text-[#789087] sm:flex-row sm:items-center sm:justify-between"><span className="font-semibold text-[#18302b]">Care Companion</span><span>แพลตฟอร์มกลางสำหรับผู้ต้องการความช่วยเหลือและผู้ให้บริการร่วมเดินทาง</span><span>© 2026 Care Companion</span></div></footer>
 		</main>
