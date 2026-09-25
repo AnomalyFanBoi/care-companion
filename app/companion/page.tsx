@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Clock3, LoaderCircle, MapPin, Navigation, Sparkles, TriangleAlert, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Clock3, LoaderCircle, MapPin, Navigation, Sparkles, TriangleAlert, UserRound } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type RequestItem = {
@@ -116,6 +116,7 @@ export default function CompanionHomePage() {
 	return (
 		<main className="min-h-screen bg-[#f8f8f4] px-5 py-8 text-[#18302b] sm:px-8 lg:py-12">
 			<div className="mx-auto max-w-7xl">
+				<Link href="/" aria-label="กลับไปหน้าหลัก" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] transition hover:text-[#18302b]"><ArrowLeft size={17} />กลับหน้าหลัก</Link>
 				<header className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
 					<div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Companion workspace</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">สวัสดี, {data.name}</h1><div className="mt-4 flex flex-wrap items-center gap-3"><span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${isBusy ? "bg-[#f8e6c8] text-[#8f682b]" : "bg-[#dceee7] text-[#467267]"}`}><span className={`size-2 rounded-full ${isBusy ? "bg-[#c4882d]" : "bg-[#5e9b83]"}`} />{isBusy ? "Busy" : "Available"}</span><span className="text-sm text-[#63746e]">{isBusy ? "คุณมีงานที่กำลังจะมาถึง" : "พร้อมรับงานใหม่ที่เหมาะกับคุณ"}</span></div></div>
 					<div className="flex flex-col gap-3 sm:flex-row"><Link href="/companion/profile" aria-label="ไปหน้าโปรไฟล์ Companion" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#dfe5df] bg-white px-4 py-3 text-sm font-semibold text-[#304640] shadow-sm transition hover:border-[#b9ccc2] hover:text-[#18302b]"><UserRound size={16} />ไปหน้าโปรไฟล์</Link><Link href="/companion/requests" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#18302b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26453d]"><BriefcaseBusiness size={16} />ดูรายการงานทั้งหมด</Link></div>
