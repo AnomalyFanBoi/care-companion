@@ -44,8 +44,8 @@ export default function Home() {
 
 				<nav className="order-3 flex w-full items-center justify-center gap-5 overflow-x-auto text-sm font-medium text-[#63746e] md:order-0 md:w-auto md:gap-8" aria-label="เมนูหลัก">
 					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="#how-it-works">วิธีใช้งาน</a>
-					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="#benefits">สำหรับลูกค้า</a>
-					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="#benefits">สำหรับ Companion</a>
+					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="/customer">สำหรับลูกค้า</a>
+					<a className="whitespace-nowrap transition-colors hover:text-[#18302b]" href="/companion">สำหรับ Companion</a>
 				</nav>
 
 				<Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-[#f1bd5d] px-4 py-3 text-xs font-semibold text-[#18302b] shadow-[0_4px_0_#d99e43] transition-transform hover:-translate-y-0.5 sm:px-5 sm:text-sm">
