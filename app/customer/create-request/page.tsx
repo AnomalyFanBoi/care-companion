@@ -61,7 +61,15 @@ export default function CreateRequestPage() {
 		if (Object.keys(validationErrors).length > 0) return;
 
 		setIsSubmitting(true);
+		const { data: authData, error: authError } = await supabase.auth.getUser();
+		if (authError || !authData.user) {
+			setStatus({ type: "error", message: "กรุณาเข้าสู่ระบบก่อนส่งคำขอ" });
+			setIsSubmitting(false);
+			return;
+		}
+
 		const { error } = await supabase.from("booking_requests").insert({
+			customer_id: authData.user.id,
 			task_type: values.taskType,
 			request_date: values.date,
 			request_time: values.time,
@@ -84,8 +92,8 @@ export default function CreateRequestPage() {
 	return (
 		<main className="min-h-screen bg-[#f8f8f4] px-5 py-8 text-[#18302b] sm:px-8 lg:py-12">
 			<div className="mx-auto max-w-3xl">
-                <Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]">
-                <ArrowLeft size={16} /> กลับหน้าหลัก
+                <Link href="/customer" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]">
+                <ArrowLeft size={16} /> กลับ
                 </Link>
 				<div className="mb-8">
 					<p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Customer request</p>

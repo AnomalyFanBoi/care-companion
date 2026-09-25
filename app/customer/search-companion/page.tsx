@@ -90,7 +90,7 @@ export default function SearchCompanionPage() {
 	return (
 		<main className="min-h-screen bg-[#f8f8f4] px-5 py-8 text-[#18302b] sm:px-8 lg:py-12">
 			<div className="mx-auto max-w-7xl">
-				<Link href="/customer/create-request" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]"><ArrowLeft size={16} />กลับไปสร้างคำขอ</Link>
+				<Link href="/customer" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]"><ArrowLeft size={16} />กลับ</Link>
 				<div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
 					<div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Find your companion</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">ค้นหา Companion ที่เหมาะกับคุณ</h1><p className="mt-4 max-w-2xl text-lg leading-8 text-[#63746e]">เลือกผู้ช่วยร่วมเดินทางจากพื้นที่ ทักษะ และเวลาที่สะดวกของคุณ</p></div>
 					<div className="flex items-center gap-2 text-sm text-[#63746e]"><Users size={18} className="text-[#5e9b83]" />{companions.length} Companion ในระบบ</div>
