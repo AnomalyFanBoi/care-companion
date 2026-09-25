@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, MapPin, Send, TriangleAlert } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import Link from "next/link";
@@ -41,6 +42,7 @@ function validateForm(values: FormValues): FormErrors {
 }
 
 export default function CreateRequestPage() {
+	const router = useRouter();
 	const [values, setValues] = useState<FormValues>(initialValues);
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,8 +84,8 @@ export default function CreateRequestPage() {
 		if (error) {
 			setStatus({ type: "error", message: "ไม่สามารถส่งคำขอได้ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง" });
 		} else {
-			setStatus({ type: "success", message: "ส่งคำขอเรียบร้อยแล้ว เราจะช่วยจับคู่ Companion ให้คุณ" });
-			setValues(initialValues);
+			router.push("/customer");
+			return;
 		}
 
 		setIsSubmitting(false);

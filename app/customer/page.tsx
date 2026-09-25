@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Clock3, FilePlus2, LoaderCircle, MapPin, Navigation, Search, ShieldCheck, TriangleAlert, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, FilePlus2, LoaderCircle, MapPin, Navigation, Search, ShieldCheck, TriangleAlert, UserRound } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type BookingRequest = {
 	id: string;
-	task_type: string | null;
-	request_date: string | null;
-	request_time: string | null;
-	origin: string | null;
+	purpose: string | null;
+	booking_date: string | null;
+	booking_time: string | null;
+	start_location: string | null;
 	destination: string | null;
 	duration: string | null;
 	status: string | null;
@@ -57,7 +57,7 @@ export default function CustomerHomePage() {
 			const userId = authData.user.id;
 			const [profileResult, requestsResult] = await Promise.all([
 				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-				supabase.from("booking_requests").select("id, task_type, request_date, request_time, origin, destination, duration, status, companion_id").eq("customer_id", userId).order("request_date", { ascending: true }).order("request_time", { ascending: true }),
+				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status, companion_id").eq("customer_id", userId).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
 			]);
 
 			if (profileResult.error || requestsResult.error) {
@@ -79,7 +79,7 @@ export default function CustomerHomePage() {
 	}, []);
 
 	const pendingRequests = data.requests.filter((request) => request.status === "pending");
-	const upcomingRequests = data.requests.filter((request) => request.status === "accepted" && isUpcoming(request.request_date));
+	const upcomingRequests = data.requests.filter((request) => request.status === "accepted" && isUpcoming(request.booking_date));
 	const completedRequests = data.requests.filter((request) => request.status === "completed");
 	const activeRequest = upcomingRequests[0] ?? pendingRequests[0] ?? null;
 
@@ -99,7 +99,16 @@ export default function CustomerHomePage() {
 					<section className="rounded-4xl bg-[#f1bd5d] p-6 text-[#18302b] shadow-[0_15px_45px_rgba(164,113,37,0.12)] sm:p-7"><div className="flex size-12 items-center justify-center rounded-2xl bg-[#18302b] text-[#f1bd5d]"><ShieldCheck size={23} /></div><h2 className="mt-6 text-2xl font-semibold tracking-[-0.04em]">เริ่มคำขอใหม่ได้ง่าย ๆ</h2><p className="mt-3 text-sm leading-7 text-[#594728]">บอกวัน เวลา และสถานที่ที่ต้องการความช่วยเหลือ แล้วเราจะช่วยเชื่อมต่อคุณกับ Companion ที่เหมาะสม</p><Link href="/customer/create-request" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#18302b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26453d]">สร้างคำขอบริการ<ArrowRight size={16} /></Link><div className="mt-8 border-t border-[#dba94e] pt-5"><p className="flex items-start gap-2 text-xs leading-5 text-[#594728]"><ShieldCheck size={15} className="mt-0.5 shrink-0" />Companion เป็นผู้ช่วยร่วมเดินทางและทำธุระ ไม่ใช่บริการทางการแพทย์</p></div></section>
 				</div>
 
-				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]"><div className="flex items-center justify-between gap-4 p-6 sm:p-7"><div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Recent activity</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">รายการคำขอของคุณ</h2></div><span className="text-sm text-[#789087]">{data.requests.length} รายการ</span></div>{isLoading ? <LoadingState /> : data.requests.length === 0 ? <div className="border-t border-[#edf0eb] px-6 py-12 text-center text-sm text-[#789087]">ยังไม่มีคำขอบริการ เริ่มต้นสร้างคำขอแรกของคุณได้เลย</div> : <div className="overflow-x-auto border-t border-[#edf0eb]"><table className="w-full min-w-[700px] text-left"><thead><tr className="bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">สถานที่</th><th className="px-6 py-4">สถานะ</th></tr></thead><tbody>{data.requests.slice(0, 6).map((request) => <tr key={request.id} className="border-t border-[#edf0eb]"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.task_type ?? ""] ?? request.task_type ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(request.request_date)}<span className="mt-1 block text-xs text-[#789087]">{formatTime(request.request_time)}</span></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.origin || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody></table></div>}</section>
+				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]">
+					<div className="flex items-center justify-between gap-4 p-6 sm:p-7">
+						<div><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Recent activity</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em]">รายการคำขอของคุณ</h2></div>
+						<span className="text-sm text-[#789087]">{data.requests.length} รายการ</span>
+					</div>
+					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <div className="border-t border-[#edf0eb] px-6 py-12 text-center text-sm text-[#789087]">ยังไม่มีคำขอบริการ เริ่มต้นสร้างคำขอแรกของคุณได้เลย</div> : <div className="overflow-x-auto border-t border-[#edf0eb]"><table className="w-full min-w-[700px] text-left">
+						<thead><tr className="bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">สถานที่</th><th className="px-6 py-4">สถานะ</th></tr></thead>
+						<tbody>{data.requests.slice(0, 6).map((request) => <tr key={request.id} className="border-t border-[#edf0eb]"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(request.booking_date)}<span className="mt-1 block text-xs text-[#789087]">{formatTime(request.booking_time)}</span></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody>
+					</table></div>}
+				</section>
 			</div>
 		</main>
 	);
@@ -111,7 +120,7 @@ function OverviewCard({ icon, label, value, tone }: { icon: React.ReactNode; lab
 }
 
 function ActiveRequestCard({ request, companionName }: { request: BookingRequest; companionName: string | null }) {
-	return <div className="border-t border-[#edf0eb] p-6 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.task_type ?? ""] ?? request.task_type ?? "ธุระทั่วไป"}</span><h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{formatDate(request.request_date)}</h3><p className="mt-1 flex items-center gap-2 text-sm text-[#63746e]"><Clock3 size={16} className="text-[#5e9b83]" />{formatTime(request.request_time)} · {durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></div><StatusBadge status={request.status} /></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><Detail icon={<MapPin size={17} />} label="จุดเริ่มต้น" value={request.origin || "ไม่ระบุ"} /><Detail icon={<Navigation size={17} />} label="จุดหมาย" value={request.destination || "ไม่ระบุ"} /></div><div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#fbfcfa] p-4"><span className="flex size-10 items-center justify-center rounded-full bg-[#dceee7] text-[#467267]"><UserRound size={19} /></span><div><p className="text-xs text-[#789087]">Companion ของคุณ</p><p className="mt-1 text-sm font-semibold text-[#304640]">{companionName || "กำลังรอ Companion ตอบรับ"}</p></div></div><Link href={`/customer/search-companion?request_id=${request.id}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#467267] hover:text-[#18302b]">ดูรายละเอียดคำขอ<ArrowRight size={16} /></Link></div>;
+	return <div className="border-t border-[#edf0eb] p-6 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</span><h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{formatDate(request.booking_date)}</h3><p className="mt-1 flex items-center gap-2 text-sm text-[#63746e]"><Clock3 size={16} className="text-[#5e9b83]" />{formatTime(request.booking_time)} · {durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></div><StatusBadge status={request.status} /></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><Detail icon={<MapPin size={17} />} label="จุดเริ่มต้น" value={request.start_location || "ไม่ระบุ"} /><Detail icon={<Navigation size={17} />} label="จุดหมาย" value={request.destination || "ไม่ระบุ"} /></div><div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#fbfcfa] p-4"><span className="flex size-10 items-center justify-center rounded-full bg-[#dceee7] text-[#467267]"><UserRound size={19} /></span><div><p className="text-xs text-[#789087]">Companion ของคุณ</p><p className="mt-1 text-sm font-semibold text-[#304640]">{companionName || "กำลังรอ Companion ตอบรับ"}</p></div></div><Link href={`/customer/search-companion?request_id=${request.id}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#467267] hover:text-[#18302b]">ดูรายละเอียดคำขอ<ArrowRight size={16} /></Link></div>;
 }
 
 function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
