@@ -40,7 +40,7 @@ export default function CompanionProfilePage() {
 			}
 
 			setUserId(authData.user.id);
-			const { data, error } = await supabase.from("companion_profiles").select("bio, skills, service_areas, availability").eq("profile_id", authData.user.id).maybeSingle();
+			const { data, error } = await supabase.from("companion_profiles").select("bio, skills, service_areas, availability").eq("user_id", authData.user.id).maybeSingle();
 			if (error) {
 				setStatus({ type: "error", message: "ไม่สามารถโหลดข้อมูลโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง" });
 			} else if (data) {
@@ -72,12 +72,12 @@ export default function CompanionProfilePage() {
 		setIsSaving(true);
 		setStatus(null);
 		const { error } = await supabase.from("companion_profiles").upsert({
-			profile_id: userId,
+			user_id: userId,
 			bio: values.bio.trim(),
 			skills: values.skills.split(",").map((item) => item.trim()).filter(Boolean),
 			service_areas: values.serviceAreas.split(",").map((item) => item.trim()).filter(Boolean),
 			availability: values.availability.split(",").map((item) => item.trim()).filter(Boolean),
-		}, { onConflict: "profile_id" });
+		}, { onConflict: "user_id" });
 
 		if (error) {
 			setStatus({ type: "error", message: "บันทึกข้อมูลไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง" });
