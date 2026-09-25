@@ -29,6 +29,7 @@ type DashboardData = {
 
 type Notice = { type: "success" | "error"; message: string };
 type DashboardFetchResult = { error: true } | { error: false; data: DashboardData };
+type UserRole = "customer" | "companion" | "admin";
 
 const roleLabels: Record<string, string> = {
 	admin: "Admin",
@@ -90,14 +91,22 @@ export default function AdminDashboardPage() {
 		};
 	}, []);
 
-	async function updateRole(profileId: string, role: string) {
+	async function updateRole(profileId: string, role: UserRole) {
 		setUpdatingUserId(profileId);
 		setNotice(null);
-		const { error } = await supabase.from("profiles").update({ role }).eq("id", profileId);
+		const { data: updatedProfile, error } = await supabase
+			.from("profiles")
+			.update({ role })
+			.eq("id", profileId)
+			.select("id, full_name, role, created_at")
+			.maybeSingle();
+
 		if (error) {
-			setNotice({ type: "error", message: "เปลี่ยนสิทธิ์ผู้ใช้งานไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" });
+			setNotice({ type: "error", message: "เปลี่ยนสิทธิ์ไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ UPDATE และ RLS policy ของ profiles" });
+		} else if (!updatedProfile) {
+			setNotice({ type: "error", message: "ฐานข้อมูลไม่ได้อัปเดตผู้ใช้นี้ โปรดตรวจสอบว่าโปรไฟล์ยังมีอยู่และ RLS policy อนุญาตให้ Admin แก้ไขได้" });
 		} else {
-			setData((current) => ({ ...current, profiles: current.profiles.map((profile) => profile.id === profileId ? { ...profile, role } : profile) }));
+			setData((current) => ({ ...current, profiles: current.profiles.map((profile) => profile.id === profileId ? updatedProfile as Profile : profile) }));
 			setNotice({ type: "success", message: "อัปเดตสิทธิ์ผู้ใช้งานเรียบร้อยแล้ว" });
 		}
 		setUpdatingUserId(null);
@@ -125,7 +134,7 @@ export default function AdminDashboardPage() {
 
 				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]">
 					<SectionHeading icon={<Users size={19} />} title="ผู้ใช้งานทั้งหมด" detail={`${data.profiles.length} บัญชี`} />
-					{isLoading ? <LoadingState /> : data.profiles.length === 0 ? <EmptyState text="ยังไม่มีข้อมูลผู้ใช้งาน" /> : <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ผู้ใช้งาน</th><th className="px-6 py-4">สิทธิ์ปัจจุบัน</th><th className="px-6 py-4">วันที่สมัคร</th><th className="px-6 py-4 text-right">จัดการสิทธิ์</th></tr></thead><tbody>{data.profiles.map((profile) => <tr key={profile.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><div className="flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#dceee7] font-semibold text-[#467267]">{getInitial(profile.full_name)}</span><div><p className="font-semibold text-[#304640]">{profile.full_name || "ยังไม่ระบุชื่อ"}</p><p className="mt-1 text-xs text-[#9aa9a3]">ID: {profile.id.slice(0, 8)}...</p></div></div></td><td className="px-6 py-5"><RoleBadge role={profile.role} /></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(profile.created_at)}</td><td className="px-6 py-5 text-right"><label className="sr-only" htmlFor={`role-${profile.id}`}>เปลี่ยนสิทธิ์ของ {profile.full_name || "ผู้ใช้งาน"}</label><select id={`role-${profile.id}`} value={profile.role ?? "customer"} onChange={(event) => void updateRole(profile.id, event.target.value)} disabled={updatingUserId === profile.id} className="rounded-xl border border-[#dfe5df] bg-[#fbfcfa] px-3 py-2 text-sm font-medium text-[#304640] outline-none transition focus:border-[#5e9b83] focus:ring-4 focus:ring-[#dceee7] disabled:opacity-60"><option value="customer">Customer</option><option value="companion">Companion</option><option value="admin">Admin</option></select></td></tr>)}</tbody></table></div>}
+					{isLoading ? <LoadingState /> : data.profiles.length === 0 ? <EmptyState text="ยังไม่มีข้อมูลผู้ใช้งาน" /> : <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ผู้ใช้งาน</th><th className="px-6 py-4">สิทธิ์ปัจจุบัน</th><th className="px-6 py-4">วันที่สมัคร</th><th className="px-6 py-4 text-right">จัดการสิทธิ์</th></tr></thead><tbody>{data.profiles.map((profile) => <tr key={profile.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><div className="flex items-center gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#dceee7] font-semibold text-[#467267]">{getInitial(profile.full_name)}</span><div><p className="font-semibold text-[#304640]">{profile.full_name || "ยังไม่ระบุชื่อ"}</p><p className="mt-1 text-xs text-[#9aa9a3]">ID: {profile.id.slice(0, 8)}...</p></div></div></td><td className="px-6 py-5"><RoleBadge role={profile.role} /></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(profile.created_at)}</td><td className="px-6 py-5 text-right"><label className="sr-only" htmlFor={`role-${profile.id}`}>เปลี่ยนสิทธิ์ของ {profile.full_name || "ผู้ใช้งาน"}</label><select id={`role-${profile.id}`} value={profile.role ?? "customer"} onChange={(event) => void updateRole(profile.id, event.target.value as UserRole)} disabled={updatingUserId === profile.id} className="rounded-xl border border-[#dfe5df] bg-[#fbfcfa] px-3 py-2 text-sm font-medium text-[#304640] outline-none transition focus:border-[#5e9b83] focus:ring-4 focus:ring-[#dceee7] disabled:opacity-60"><option value="customer">Customer</option><option value="companion">Companion</option><option value="admin">Admin</option></select></td></tr>)}</tbody></table></div>}
 				</section>
 
 				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]">

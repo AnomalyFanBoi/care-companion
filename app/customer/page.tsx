@@ -46,8 +46,39 @@ export default function CustomerHomePage() {
 	const [notice, setNotice] = useState<Notice | null>(null);
 
 	useEffect(() => {
-		async function loadDashboard() {
+		let isMounted = true;
+		let channel: ReturnType<typeof supabase.channel> | null = null;
+		let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+		async function loadDashboard(userId: string) {
+			const [profileResult, requestsResult] = await Promise.all([
+				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status, companion_id").eq("customer_id", userId).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
+			]);
+
+			if (!isMounted) return;
+			if (profileResult.error || requestsResult.error) {
+				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Dashboard ได้ กรุณาลองใหม่อีกครั้ง" });
+				setIsLoading(false);
+				return;
+			}
+
+			const requests = (requestsResult.data ?? []) as BookingRequest[];
+			const companionIds = [...new Set(requests.map((request) => request.companion_id).filter((id): id is string => Boolean(id)))];
+			const { data: companions, error: companionsError } = companionIds.length ? await supabase.from("profiles").select("id, full_name").in("id", companionIds) : { data: [], error: null };
+			if (!isMounted) return;
+			if (companionsError) {
+				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Companion ได้ กรุณาลองใหม่อีกครั้ง" });
+			} else {
+				setData({ name: profileResult.data?.full_name || "Customer", requests, companionNames: Object.fromEntries((companions ?? []).map((companion) => [companion.id, companion.full_name || "Companion"])) });
+				setNotice(null);
+			}
+			setIsLoading(false);
+		}
+
+		async function connectDashboard() {
 			const { data: authData, error: authError } = await supabase.auth.getUser();
+			if (!isMounted) return;
 			if (authError || !authData.user) {
 				setNotice({ type: "error", message: "กรุณาเข้าสู่ระบบก่อนใช้งาน Customer Dashboard" });
 				setIsLoading(false);
@@ -55,27 +86,33 @@ export default function CustomerHomePage() {
 			}
 
 			const userId = authData.user.id;
-			const [profileResult, requestsResult] = await Promise.all([
-				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status, companion_id").eq("customer_id", userId).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
-			]);
+			await loadDashboard(userId);
+			if (!isMounted) return;
 
-			if (profileResult.error || requestsResult.error) {
-				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Dashboard ได้ กรุณาลองใหม่อีกครั้ง" });
-			} else {
-				const requests = (requestsResult.data ?? []) as BookingRequest[];
-				const companionIds = [...new Set(requests.map((request) => request.companion_id).filter((id): id is string => Boolean(id)))];
-				const { data: companions, error: companionsError } = companionIds.length ? await supabase.from("profiles").select("id, full_name").in("id", companionIds) : { data: [], error: null };
-				if (companionsError) {
-					setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Companion ได้ กรุณาลองใหม่อีกครั้ง" });
-				} else {
-					setData({ name: profileResult.data?.full_name || "Customer", requests, companionNames: Object.fromEntries((companions ?? []).map((companion) => [companion.id, companion.full_name || "Companion"])) });
-				}
-			}
-			setIsLoading(false);
+			channel = supabase
+				.channel(`customer-booking-requests-${userId}`)
+				.on("postgres_changes", {
+					event: "*",
+					schema: "public",
+					table: "booking_requests",
+					filter: `customer_id=eq.${userId}`,
+				}, () => {
+					if (refreshTimer) clearTimeout(refreshTimer);
+					refreshTimer = setTimeout(() => void loadDashboard(userId), 200);
+				})
+				.subscribe((status) => {
+					if (isMounted && (status === "CHANNEL_ERROR" || status === "TIMED_OUT")) {
+						setNotice({ type: "error", message: "เชื่อมต่อรายการแบบ real-time ไม่สำเร็จ โปรดตรวจสอบการเปิด Realtime และ RLS ของ booking_requests" });
+					}
+				});
 		}
 
-		void loadDashboard();
+		void connectDashboard();
+		return () => {
+			isMounted = false;
+			if (refreshTimer) clearTimeout(refreshTimer);
+			if (channel) void supabase.removeChannel(channel);
+		};
 	}, []);
 
 	const pendingRequests = data.requests.filter((request) => request.status === "pending");

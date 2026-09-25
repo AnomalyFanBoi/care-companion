@@ -40,7 +40,6 @@ const emptyProfile: ProfileValues = {
 export default function CompanionProfilePage() {
 	const [values, setValues] = useState<ProfileValues>(emptyProfile);
 	const [userId, setUserId] = useState<string | null>(null);
-	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 	const [hasProfile, setHasProfile] = useState(false);
@@ -76,10 +75,10 @@ export default function CompanionProfilePage() {
 			]);
 
 			if (!isMounted) return;
-			if (companionResult.error || profileResult.error) {
-				setNotice(toNotice(companionResult.error ?? profileResult.error, "โหลดโปรไฟล์ไม่สำเร็จ"));
+			const loadError = companionResult.error || profileResult.error;
+			if (loadError) {
+				setNotice(toNotice(loadError, "โหลดโปรไฟล์ไม่สำเร็จ"));
 			} else {
-				setAvatarUrl(profileResult.data?.avatar_url ?? null);
 				setAvatarPreview(profileResult.data?.avatar_url ?? null);
 				if (companionResult.data) {
 				const profile = companionResult.data as CompanionProfileDB;
@@ -147,7 +146,6 @@ export default function CompanionProfilePage() {
 			await supabase.storage.from(avatarBucket).remove([objectPath]);
 			setNotice(toNotice(profileError, "บันทึกรูปโปรไฟล์ไม่สำเร็จ"));
 		} else {
-			setAvatarUrl(data.publicUrl);
 			setAvatarPreview(data.publicUrl);
 			setAvatarFile(null);
 			setNotice({ type: "success", message: "อัปโหลดรูปโปรไฟล์เรียบร้อยแล้ว" });
