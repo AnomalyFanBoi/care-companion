@@ -14,10 +14,10 @@ type Profile = {
 
 type BookingRequest = {
 	id: string;
-	task_type: string | null;
-	request_date: string | null;
-	request_time: string | null;
-	origin: string | null;
+	purpose: string | null;
+	booking_date: string | null;
+	booking_time: string | null;
+	start_location: string | null;
 	destination: string | null;
 	status: string | null;
 };
@@ -28,6 +28,7 @@ type DashboardData = {
 };
 
 type Notice = { type: "success" | "error"; message: string };
+type DashboardFetchResult = { error: true } | { error: false; data: DashboardData };
 
 const roleLabels: Record<string, string> = {
 	admin: "Admin",
@@ -43,6 +44,16 @@ const taskLabels: Record<string, string> = {
 	other: "ธุระอื่น ๆ",
 };
 
+async function fetchDashboardData(): Promise<DashboardFetchResult> {
+	const [profilesResult, requestsResult] = await Promise.all([
+		supabase.from("profiles").select("id, full_name, role, created_at").order("created_at", { ascending: false }),
+		supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, status").order("booking_date", { ascending: false }).order("booking_time", { ascending: false }),
+	]);
+
+	if (profilesResult.error || requestsResult.error) return { error: true };
+	return { error: false, data: { profiles: (profilesResult.data ?? []) as Profile[], requests: (requestsResult.data ?? []) as BookingRequest[] } };
+}
+
 export default function AdminDashboardPage() {
 	const [data, setData] = useState<DashboardData>({ profiles: [], requests: [] });
 	const [isLoading, setIsLoading] = useState(true);
@@ -50,42 +61,30 @@ export default function AdminDashboardPage() {
 	const [notice, setNotice] = useState<Notice | null>(null);
 
 	const loadDashboard = useCallback(async () => {
-		setIsLoading(true);
-		setNotice(null);
-		const [profilesResult, requestsResult] = await Promise.all([
-			supabase.from("profiles").select("id, full_name, role, created_at").order("created_at", { ascending: false }),
-			supabase.from("booking_requests").select("id, task_type, request_date, request_time, origin, destination, status").order("request_date", { ascending: false }).order("request_time", { ascending: false }),
-		]);
-
-		if (profilesResult.error || requestsResult.error) {
+		const result = await fetchDashboardData();
+		if (result.error) {
 			setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาตรวจสอบสิทธิ์แล้วลองใหม่อีกครั้ง" });
 		} else {
-			setData({ profiles: (profilesResult.data ?? []) as Profile[], requests: (requestsResult.data ?? []) as BookingRequest[] });
+			setData(result.data);
 		}
 		setIsLoading(false);
 	}, []);
 
 	useEffect(() => {
 		let isMounted = true;
-		
-		const fetchInitialData = async () => {
-			const [profilesResult, requestsResult] = await Promise.all([
-				supabase.from("profiles").select("id, full_name, role, created_at").order("created_at", { ascending: false }),
-				supabase.from("booking_requests").select("id, task_type, request_date, request_time, origin, destination, status").order("request_date", { ascending: false }).order("request_time", { ascending: false }),
-			]);
-
+		async function fetchInitialData() {
+			const result = await fetchDashboardData();
 			if (!isMounted) return;
 
-			if (profilesResult.error || requestsResult.error) {
+			if (result.error) {
 				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาตรวจสอบสิทธิ์แล้วลองใหม่อีกครั้ง" });
 			} else {
-				setData({ profiles: (profilesResult.data ?? []) as Profile[], requests: (requestsResult.data ?? []) as BookingRequest[] });
+				setData(result.data);
 			}
 			setIsLoading(false);
-		};
+		}
 
 		void fetchInitialData();
-
 		return () => {
 			isMounted = false;
 		};
@@ -112,7 +111,7 @@ export default function AdminDashboardPage() {
 			<div className="mx-auto max-w-7xl">
 				<header className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
 					<div><Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-[#63746e] hover:text-[#18302b]"><ArrowLeft size={16} />กลับหน้าหลัก</Link><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#789087]">Admin workspace</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">ภาพรวมระบบ</h1><p className="mt-4 max-w-2xl text-lg leading-8 text-[#63746e]">ดูแลผู้ใช้งานและติดตามคำขอบริการทั้งหมดจากที่เดียว</p></div>
-					<button type="button" onClick={() => void loadDashboard()} disabled={isLoading} title="รีเฟรชข้อมูล" className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-[#dfe5df] bg-white px-4 py-3 text-sm font-semibold text-[#304640] shadow-sm transition hover:border-[#b9ccc2] hover:text-[#18302b] disabled:cursor-not-allowed disabled:opacity-60 md:self-end"><RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />รีเฟรชข้อมูล</button>
+					<button type="button" onClick={() => { setIsLoading(true); setNotice(null); void loadDashboard(); }} disabled={isLoading} title="รีเฟรชข้อมูล" className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-[#dfe5df] bg-white px-4 py-3 text-sm font-semibold text-[#304640] shadow-sm transition hover:border-[#b9ccc2] hover:text-[#18302b] disabled:cursor-not-allowed disabled:opacity-60 md:self-end"><RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />รีเฟรชข้อมูล</button>
 				</header>
 
 				{notice ? <div role={notice.type === "error" ? "alert" : "status"} className={`mt-7 flex items-start gap-3 rounded-2xl p-4 text-sm leading-6 ${notice.type === "success" ? "bg-[#edf6f1] text-[#356b5b]" : "bg-[#fff0ed] text-[#a64a3c]"}`}>{notice.type === "success" ? <CheckCircle2 size={19} className="mt-0.5 shrink-0" /> : <TriangleAlert size={19} className="mt-0.5 shrink-0" />}{notice.message}</div> : null}
@@ -131,7 +130,7 @@ export default function AdminDashboardPage() {
 
 				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]">
 					<SectionHeading icon={<BriefcaseBusiness size={19} />} title="คำขอบริการทั้งหมด" detail={`${data.requests.length} งาน`} />
-					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <EmptyState text="ยังไม่มีคำขอบริการ" /> : <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">เส้นทาง</th><th className="px-6 py-4">สถานะ</th></tr></thead><tbody>{data.requests.map((request) => <tr key={request.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.task_type ?? ""] ?? request.task_type ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">#{request.id.slice(0, 8)}</p></td><td className="px-6 py-5"><p className="text-sm font-medium text-[#304640]">{formatDate(request.request_date)}</p><p className="mt-1 flex items-center gap-1 text-xs text-[#789087]"><Clock3 size={13} />{formatTime(request.request_time)}</p></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.origin || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody></table></div>}
+					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <EmptyState text="ยังไม่มีคำขอบริการ" /> : <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">เส้นทาง</th><th className="px-6 py-4">สถานะ</th></tr></thead><tbody>{data.requests.map((request) => <tr key={request.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">#{request.id.slice(0, 8)}</p></td><td className="px-6 py-5"><p className="text-sm font-medium text-[#304640]">{formatDate(request.booking_date)}</p><p className="mt-1 flex items-center gap-1 text-xs text-[#789087]"><Clock3 size={13} />{formatTime(request.booking_time)}</p></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody></table></div>}
 				</section>
 			</div>
 		</main>
@@ -165,7 +164,7 @@ function LoadingState() {
 }
 
 function EmptyState({ text }: { text: string }) {
-	return <div className="border-t border-[#edf0eb] px-6 psy-16 text-center text-sm text-[#789087]">{text}</div>;
+	return <div className="border-t border-[#edf0eb] px-6 py-16 text-center text-sm text-[#789087]">{text}</div>;
 }
 
 function getInitial(name: string | null) {
