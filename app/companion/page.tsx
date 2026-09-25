@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Clock3, LoaderCircle, MapPin, Navigation, ShieldCheck, Sparkles, TriangleAlert, UserRound } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CalendarDays, Check, CheckCircle2, Clock3, LoaderCircle, MapPin, Navigation, Sparkles, TriangleAlert, UserRound } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 type RequestItem = {
 	id: string;
-	task_type: string | null;
-	request_date: string | null;
-	request_time: string | null;
-	origin: string | null;
+	purpose: string | null;
+	booking_date: string | null;
+	booking_time: string | null;
+	start_location: string | null;
 	destination: string | null;
 	duration: string | null;
 	status: string | null;
@@ -58,9 +58,9 @@ export default function CompanionHomePage() {
 			const userId = authData.user.id;
 			const [profileResult, companionProfileResult, openRequestsResult, myRequestsResult] = await Promise.all([
 				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-				supabase.from("companion_profiles").select("service_areas").eq("profile_id", userId).maybeSingle(),
-				supabase.from("booking_requests").select("id, task_type, request_date, request_time, origin, destination, duration, status").eq("status", "pending").order("request_date", { ascending: true }).order("request_time", { ascending: true }).limit(4),
-				supabase.from("booking_requests").select("id, task_type, request_date, request_time, origin, destination, duration, status").eq("companion_id", userId).in("status", ["accepted", "completed"]).order("request_date", { ascending: true }).order("request_time", { ascending: true }),
+				supabase.from("companion_profiles").select("service_areas").eq("user_id", userId).maybeSingle(),
+				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status").eq("status", "pending").order("booking_date", { ascending: true }).order("booking_time", { ascending: true }).limit(4),
+				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status").eq("companion_id", userId).in("status", ["accepted", "completed"]).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
 			]);
 
 			if (profileResult.error || companionProfileResult.error || openRequestsResult.error || myRequestsResult.error) {
@@ -93,7 +93,7 @@ export default function CompanionHomePage() {
 			.update({ status: "accepted", companion_id: authData.user.id })
 			.eq("id", request.id)
 			.eq("status", "pending")
-			.select("id, task_type, request_date, request_time, origin, destination, duration, status")
+			.select("id, purpose, booking_date, booking_time, start_location, destination, duration, status")
 			.maybeSingle();
 
 		if (error) {
@@ -110,7 +110,7 @@ export default function CompanionHomePage() {
 
 	const acceptedCount = data.myRequests.filter((request) => request.status === "accepted").length;
 	const completedCount = data.myRequests.filter((request) => request.status === "completed").length;
-	const upcomingRequests = data.myRequests.filter((request) => request.status === "accepted" && isUpcoming(request.request_date));
+	const upcomingRequests = data.myRequests.filter((request) => request.status === "accepted" && isUpcoming(request.booking_date));
 	const isBusy = upcomingRequests.length > 0;
 
 	return (
@@ -141,11 +141,11 @@ function SummaryCard({ icon, label, value, detail, tone }: { icon: React.ReactNo
 }
 
 function OpportunityCard({ request, isAccepting, onAccept }: { request: RequestItem; isAccepting: boolean; onAccept: (request: RequestItem) => void }) {
-	return <article className="rounded-3xl border border-[#e4e8e1] bg-[#fbfcfa] p-5 transition hover:border-[#b9ccc2]"><div className="flex items-start justify-between gap-3"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.task_type ?? ""] ?? request.task_type ?? "ธุระทั่วไป"}</span><h3 className="mt-3 font-semibold text-[#304640]">{formatDate(request.request_date)} · {formatTime(request.request_time)}</h3></div><BriefcaseBusiness size={19} className="mt-1 shrink-0 text-[#789087]" /></div><div className="mt-4 grid gap-2 text-sm text-[#63746e] sm:grid-cols-2"><p className="flex min-w-0 items-center gap-2"><MapPin size={15} className="shrink-0 text-[#5e9b83]" /><span className="truncate">{request.origin || "ไม่ระบุจุดเริ่มต้น"}</span></p><p className="flex min-w-0 items-center gap-2"><Navigation size={15} className="shrink-0 text-[#5e9b83]" /><span className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</span></p></div><p className="mt-3 flex items-center gap-2 text-xs text-[#789087]"><Clock3 size={14} />{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p><div className="mt-5 flex flex-col gap-2 sm:flex-row"><Link href={`/companion/requests#${request.id}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#dfe5df] px-4 py-3 text-sm font-semibold text-[#467267] transition hover:border-[#9ebaae]"><ArrowRight size={15} />ดูรายละเอียด</Link><button type="button" onClick={() => onAccept(request)} disabled={isAccepting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#18302b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26453d] disabled:cursor-not-allowed disabled:opacity-60">{isAccepting ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}{isAccepting ? "กำลังรับงาน..." : "กดรับงาน"}</button></div></article>;
+	return <article className="rounded-3xl border border-[#e4e8e1] bg-[#fbfcfa] p-5 transition hover:border-[#b9ccc2]"><div className="flex items-start justify-between gap-3"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</span><h3 className="mt-3 font-semibold text-[#304640]">{formatDate(request.booking_date)} · {formatTime(request.booking_time)}</h3></div><BriefcaseBusiness size={19} className="mt-1 shrink-0 text-[#789087]" /></div><div className="mt-4 grid gap-2 text-sm text-[#63746e] sm:grid-cols-2"><p className="flex min-w-0 items-center gap-2"><MapPin size={15} className="shrink-0 text-[#5e9b83]" /><span className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</span></p><p className="flex min-w-0 items-center gap-2"><Navigation size={15} className="shrink-0 text-[#5e9b83]" /><span className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</span></p></div><p className="mt-3 flex items-center gap-2 text-xs text-[#789087]"><Clock3 size={14} />{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p><div className="mt-5 flex flex-col gap-2 sm:flex-row"><Link href={`/companion/requests#${request.id}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#dfe5df] px-4 py-3 text-sm font-semibold text-[#467267] transition hover:border-[#9ebaae]"><ArrowRight size={15} />ดูรายละเอียด</Link><button type="button" onClick={() => onAccept(request)} disabled={isAccepting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#18302b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26453d] disabled:cursor-not-allowed disabled:opacity-60">{isAccepting ? <LoaderCircle size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}{isAccepting ? "กำลังรับงาน..." : "กดรับงาน"}</button></div></article>;
 }
 
 function ScheduleItem({ request }: { request: RequestItem }) {
-	return <article className="rounded-2xl border border-[#31534a] bg-[#23453c] p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1bd5d] text-[#18302b]"><CalendarDays size={18} /></span><div className="min-w-0"><p className="text-sm font-semibold text-white">{taskLabels[request.task_type ?? ""] ?? request.task_type ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#b6c9c0]">{formatDate(request.request_date)} · {formatTime(request.request_time)}</p><p className="mt-3 truncate text-xs text-[#dceee7]">{request.origin || "ไม่ระบุจุดเริ่มต้น"} → {request.destination || "ไม่ระบุจุดหมาย"}</p></div></div></article>;
+	return <article className="rounded-2xl border border-[#31534a] bg-[#23453c] p-4"><div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f1bd5d] text-[#18302b]"><CalendarDays size={18} /></span><div className="min-w-0"><p className="text-sm font-semibold text-white">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#b6c9c0]">{formatDate(request.booking_date)} · {formatTime(request.booking_time)}</p><p className="mt-3 truncate text-xs text-[#dceee7]">{request.start_location || "ไม่ระบุจุดเริ่มต้น"} → {request.destination || "ไม่ระบุจุดหมาย"}</p></div></div></article>;
 }
 
 function LoadingState() {
