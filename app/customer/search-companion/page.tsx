@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, Check, LoaderCircle, MapPin, Search, ShieldCheck, Users, X } from "lucide-react";
@@ -25,7 +25,21 @@ const availabilityOptions = [
 	{ value: "evening", label: "ช่วงเย็น (18:00 เป็นต้นไป)" },
 ];
 
+// 1. สร้าง Component หลักเพื่อเป็นจุดรับ Suspense
 export default function SearchCompanionPage() {
+	return (
+		<Suspense fallback={
+			<main className="min-h-screen bg-[#f8f8f4] px-5 py-8 text-[#18302b] sm:px-8 lg:py-12 flex justify-center items-center">
+				<LoaderCircle size={32} className="animate-spin text-[#5e9b83]" />
+			</main>
+		}>
+			<SearchCompanionContent />
+		</Suspense>
+	);
+}
+
+// 2. ย้ายโค้ดเดิมทั้งหมดมาอยู่ใน SearchCompanionContent
+function SearchCompanionContent() {
 	const searchParams = useSearchParams();
 	const requestId = searchParams.get("request_id");
 	const [companions, setCompanions] = useState<Companion[]>([]);
