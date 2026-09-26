@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, HeartHandshake, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
+// 1. Export Component หลักที่ครอบด้วย Suspense
 export default function LoginPage() {
+	return (
+		<Suspense
+			fallback={
+				<main className="flex min-h-screen items-center justify-center bg-[#f8f8f4] text-[#5e9b83]">
+					<LoaderCircle size={32} className="animate-spin" aria-label="กำลังตรวจสอบเซสชัน" />
+				</main>
+			}
+		>
+			<LoginContent />
+		</Suspense>
+	);
+}
+
+// 2. ย้าย Logic และ UI ทั้งหมดมาไว้ใน Component ย่อย
+function LoginContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const redirectToParam = searchParams.get("redirectTo") || "/";
@@ -18,7 +34,6 @@ export default function LoginPage() {
 	useEffect(() => {
 		let isMounted = true;
 
-		// 1. เช็ก User สดๆ จาก Supabase Server (หลีกเลี่ยง Stale Session Cache)
 		async function checkCurrentUser() {
 			const { data: { user } } = await supabase.auth.getUser();
 			if (!isMounted) return;
@@ -33,7 +48,6 @@ export default function LoginPage() {
 
 		void checkCurrentUser();
 
-		// 2. ตรวจจับ event เมื่อ Auth State มีการเปลี่ยนแปลง (เช่น การสลับ/ล็อกอินสำเร็จ)
 		const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
 			if (event === "SIGNED_IN" && session?.user && isMounted) {
 				router.replace(redirectToParam);
@@ -51,7 +65,6 @@ export default function LoginPage() {
 		setIsSigningIn(true);
 		setErrorMessage("");
 
-		// กำหนด Callback Redirect URL
 		const callbackUrl = new URL("/auth/callback", window.location.origin);
 		if (redirectToParam !== "/") {
 			callbackUrl.searchParams.set("next", redirectToParam);
@@ -62,7 +75,7 @@ export default function LoginPage() {
 			options: {
 				redirectTo: callbackUrl.toString(),
 				queryParams: {
-					prompt: "select_account", // บังคับให้ Google แสดงหน้าเลือกบัญชีเสมอ เพื่อป้องกันปัญหาสลับอีเมลไม่ได้
+					prompt: "select_account",
 				},
 			},
 		});
