@@ -70,9 +70,9 @@ export default function CreateRequestPage() {
 			return;
 		}
 
-		const { error } = await supabase.from("booking_requests").insert({
+		const { error } = await supabase.from("booking_request").insert({
 			customer_id: authData.user.id,
-			purpose: values.taskType,
+			task: values.taskType,
 			booking_date: values.date,
 			booking_time: values.time,
 			start_location: values.origin.trim(),

@@ -25,10 +25,23 @@ export async function GET(request: Request) {
       },
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       return NextResponse.redirect(new URL("/login?error=auth", requestUrl));
+    }
+
+    const user = data.user;
+    if (user?.email) {
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        { id: user.id, email: user.email, role: "customer" },
+        { onConflict: "id", ignoreDuplicates: true },
+      );
+
+      if (profileError) {
+        console.error("Failed to save profile after OAuth sign-in:", profileError);
+        return NextResponse.json({ error: "Unable to save user profile." }, { status: 500 });
+      }
     }
   }
 

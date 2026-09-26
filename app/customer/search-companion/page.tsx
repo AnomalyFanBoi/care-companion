@@ -11,7 +11,6 @@ type Companion = {
 	id: string;
 	name: string;
 	avatarUrl: string | null;
-	bio: string;
 	areas: string[];
 	skills: string[];
 	availability: string[];
@@ -42,7 +41,7 @@ export default function SearchCompanionPage() {
 			setIsLoading(true);
 			const { data, error } = await supabase
 				.from("profiles")
-				.select("id, full_name, avatar_url, bio, companion_profiles!inner(*)");
+				.select("id, full_name, avatar_url,	companion_profiles!inner(*)");
 
 			if (error) {
 				setMessage({ type: "error", text: "ไม่สามารถโหลดข้อมูล Companion ได้ กรุณาลองใหม่อีกครั้ง" });
@@ -120,7 +119,6 @@ function normalizeCompanion(profile: RawProfile): Companion {
 		id: String(profile.id),
 		name: String(profile.full_name ?? profile.name ?? "Companion"),
 		avatarUrl: typeof profile.avatar_url === "string" ? profile.avatar_url : null,
-		bio: String(profile.bio ?? nested?.bio ?? "พร้อมช่วยให้การเดินทางและการทำธุระของคุณง่ายขึ้น"),
 		areas: readList(nested?.service_areas ?? nested?.service_area ?? profile.service_areas ?? profile.service_area),
 		skills: readList(nested?.skills ?? nested?.abilities ?? profile.skills),
 		availability: readList(nested?.availability ?? nested?.available_times ?? profile.availability),
@@ -134,7 +132,7 @@ function FilterField({ label, value, onChange, placeholder }: { label: string; v
 function CompanionCard({ companion, isSelected, isRequestPending, onChoose }: { companion: Companion; isSelected: boolean; isRequestPending: boolean; onChoose: (companion: Companion) => void }) {
 	return <article className="flex flex-col rounded-4xl border border-[#e4e8e1] bg-white p-6 shadow-[0_15px_45px_rgba(36,67,57,0.06)] transition hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(36,67,57,0.1)]">
 		<div className="flex items-start gap-4"><div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#dceee7] text-xl font-semibold text-[#467267]">{companion.avatarUrl ? <Image src={companion.avatarUrl} alt={companion.name} className="size-full object-cover" /> : companion.name.charAt(0)}</div><div className="min-w-0"><h2 className="truncate text-lg font-semibold">{companion.name}</h2><div className="mt-1 flex items-center gap-1 text-xs text-[#5e9b83]"><ShieldCheck size={14} />โปรไฟล์ Companion</div></div></div>
-		<p className="mt-5 min-h-14 text-sm leading-6 text-[#63746e]">{companion.bio}</p>
+		<p className="mt-5 min-h-14 text-sm leading-6 text-[#63746e]"></p>
 		<div className="mt-5"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#789087]"><MapPin size={14} />พื้นที่ให้บริการ</div><div className="mt-2 flex flex-wrap gap-2">{companion.areas.length ? companion.areas.map((item) => <span key={item} className="rounded-full bg-[#edf6f1] px-3 py-1 text-xs text-[#467267]">{item}</span>) : <span className="text-sm text-[#9aa9a3]">ยังไม่ได้ระบุ</span>}</div></div>
 		<div className="mt-5"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#789087]"><CalendarClock size={14} />ทักษะและเวลาที่สะดวก</div><div className="mt-2 flex flex-wrap gap-2">{[...companion.skills, ...companion.availability].slice(0, 5).map((item) => <span key={item} className="rounded-full bg-[#f8e6c8] px-3 py-1 text-xs text-[#725523]">{item}</span>)}{!companion.skills.length && !companion.availability.length ? <span className="text-sm text-[#9aa9a3]">ยังไม่ได้ระบุ</span> : null}</div></div>
 		<button type="button" onClick={() => onChoose(companion)} disabled={isRequestPending} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#18302b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#26453d] disabled:cursor-not-allowed disabled:opacity-70">{isRequestPending ? <LoaderCircle size={17} className="animate-spin" /> : isSelected ? <Check size={17} /> : null}{isRequestPending ? "กำลังจับคู่..." : isSelected ? "เลือกแล้ว" : "เลือก Companion"}</button>

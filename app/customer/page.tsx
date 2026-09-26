@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabase";
 
 type BookingRequest = {
 	id: string;
-	purpose: string | null;
+	task: string | null;
 	booking_date: string | null;
 	booking_time: string | null;
 	start_location: string | null;
@@ -46,39 +46,8 @@ export default function CustomerHomePage() {
 	const [notice, setNotice] = useState<Notice | null>(null);
 
 	useEffect(() => {
-		let isMounted = true;
-		let channel: ReturnType<typeof supabase.channel> | null = null;
-		let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-
-		async function loadDashboard(userId: string) {
-			const [profileResult, requestsResult] = await Promise.all([
-				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-				supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, duration, status, companion_id").eq("customer_id", userId).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
-			]);
-
-			if (!isMounted) return;
-			if (profileResult.error || requestsResult.error) {
-				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Dashboard ได้ กรุณาลองใหม่อีกครั้ง" });
-				setIsLoading(false);
-				return;
-			}
-
-			const requests = (requestsResult.data ?? []) as BookingRequest[];
-			const companionIds = [...new Set(requests.map((request) => request.companion_id).filter((id): id is string => Boolean(id)))];
-			const { data: companions, error: companionsError } = companionIds.length ? await supabase.from("profiles").select("id, full_name").in("id", companionIds) : { data: [], error: null };
-			if (!isMounted) return;
-			if (companionsError) {
-				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Companion ได้ กรุณาลองใหม่อีกครั้ง" });
-			} else {
-				setData({ name: profileResult.data?.full_name || "Customer", requests, companionNames: Object.fromEntries((companions ?? []).map((companion) => [companion.id, companion.full_name || "Companion"])) });
-				setNotice(null);
-			}
-			setIsLoading(false);
-		}
-
-		async function connectDashboard() {
+		async function loadDashboard() {
 			const { data: authData, error: authError } = await supabase.auth.getUser();
-			if (!isMounted) return;
 			if (authError || !authData.user) {
 				setNotice({ type: "error", message: "กรุณาเข้าสู่ระบบก่อนใช้งาน Customer Dashboard" });
 				setIsLoading(false);
@@ -86,33 +55,27 @@ export default function CustomerHomePage() {
 			}
 
 			const userId = authData.user.id;
-			await loadDashboard(userId);
-			if (!isMounted) return;
+			const [profileResult, requestsResult] = await Promise.all([
+				supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+				supabase.from("booking_request").select("id, task, booking_date, booking_time, start_location, destination, duration, status, companion_id").eq("customer_id", userId).order("booking_date", { ascending: true }).order("booking_time", { ascending: true }),
+			]);
 
-			channel = supabase
-				.channel(`customer-booking-requests-${userId}`)
-				.on("postgres_changes", {
-					event: "*",
-					schema: "public",
-					table: "booking_requests",
-					filter: `customer_id=eq.${userId}`,
-				}, () => {
-					if (refreshTimer) clearTimeout(refreshTimer);
-					refreshTimer = setTimeout(() => void loadDashboard(userId), 200);
-				})
-				.subscribe((status) => {
-					if (isMounted && (status === "CHANNEL_ERROR" || status === "TIMED_OUT")) {
-						setNotice({ type: "error", message: "เชื่อมต่อรายการแบบ real-time ไม่สำเร็จ โปรดตรวจสอบการเปิด Realtime และ RLS ของ booking_requests" });
-					}
-				});
+			if (profileResult.error || requestsResult.error) {
+				setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Dashboard ได้ กรุณาลองใหม่อีกครั้ง" });
+			} else {
+				const requests = (requestsResult.data ?? []) as BookingRequest[];
+				const companionIds = [...new Set(requests.map((request) => request.companion_id).filter((id): id is string => Boolean(id)))];
+				const { data: companions, error: companionsError } = companionIds.length ? await supabase.from("profiles").select("id, full_name").in("id", companionIds) : { data: [], error: null };
+				if (companionsError) {
+					setNotice({ type: "error", message: "ไม่สามารถโหลดข้อมูล Companion ได้ กรุณาลองใหม่อีกครั้ง" });
+				} else {
+					setData({ name: profileResult.data?.full_name || "Customer", requests, companionNames: Object.fromEntries((companions ?? []).map((companion) => [companion.id, companion.full_name || "Companion"])) });
+				}
+			}
+			setIsLoading(false);
 		}
 
-		void connectDashboard();
-		return () => {
-			isMounted = false;
-			if (refreshTimer) clearTimeout(refreshTimer);
-			if (channel) void supabase.removeChannel(channel);
-		};
+		void loadDashboard();
 	}, []);
 
 	const pendingRequests = data.requests.filter((request) => request.status === "pending");
@@ -143,7 +106,7 @@ export default function CustomerHomePage() {
 					</div>
 					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <div className="border-t border-[#edf0eb] px-6 py-12 text-center text-sm text-[#789087]">ยังไม่มีคำขอบริการ เริ่มต้นสร้างคำขอแรกของคุณได้เลย</div> : <div className="overflow-x-auto border-t border-[#edf0eb]"><table className="w-full min-w-[700px] text-left">
 						<thead><tr className="bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">สถานที่</th><th className="px-6 py-4">สถานะ</th></tr></thead>
-						<tbody>{data.requests.slice(0, 6).map((request) => <tr key={request.id} className="border-t border-[#edf0eb]"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(request.booking_date)}<span className="mt-1 block text-xs text-[#789087]">{formatTime(request.booking_time)}</span></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody>
+						<tbody>{data.requests.slice(0, 6).map((request) => <tr key={request.id} className="border-t border-[#edf0eb]"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.task ?? ""] ?? request.task ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">{durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></td><td className="px-6 py-5 text-sm text-[#63746e]">{formatDate(request.booking_date)}<span className="mt-1 block text-xs text-[#789087]">{formatTime(request.booking_time)}</span></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody>
 					</table></div>}
 				</section>
 			</div>
@@ -157,7 +120,7 @@ function OverviewCard({ icon, label, value, tone }: { icon: React.ReactNode; lab
 }
 
 function ActiveRequestCard({ request, companionName }: { request: BookingRequest; companionName: string | null }) {
-	return <div className="border-t border-[#edf0eb] p-6 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</span><h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{formatDate(request.booking_date)}</h3><p className="mt-1 flex items-center gap-2 text-sm text-[#63746e]"><Clock3 size={16} className="text-[#5e9b83]" />{formatTime(request.booking_time)} · {durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></div><StatusBadge status={request.status} /></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><Detail icon={<MapPin size={17} />} label="จุดเริ่มต้น" value={request.start_location || "ไม่ระบุ"} /><Detail icon={<Navigation size={17} />} label="จุดหมาย" value={request.destination || "ไม่ระบุ"} /></div><div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#fbfcfa] p-4"><span className="flex size-10 items-center justify-center rounded-full bg-[#dceee7] text-[#467267]"><UserRound size={19} /></span><div><p className="text-xs text-[#789087]">Companion ของคุณ</p><p className="mt-1 text-sm font-semibold text-[#304640]">{companionName || "กำลังรอ Companion ตอบรับ"}</p></div></div><Link href={`/customer/search-companion?request_id=${request.id}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#467267] hover:text-[#18302b]">ดูรายละเอียดคำขอ<ArrowRight size={16} /></Link></div>;
+	return <div className="border-t border-[#edf0eb] p-6 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.task ?? ""] ?? request.task ?? "ธุระทั่วไป"}</span><h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{formatDate(request.booking_date)}</h3><p className="mt-1 flex items-center gap-2 text-sm text-[#63746e]"><Clock3 size={16} className="text-[#5e9b83]" />{formatTime(request.booking_time)} · {durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ระบุระยะเวลา"}</p></div><StatusBadge status={request.status} /></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><Detail icon={<MapPin size={17} />} label="จุดเริ่มต้น" value={request.start_location || "ไม่ระบุ"} /><Detail icon={<Navigation size={17} />} label="จุดหมาย" value={request.destination || "ไม่ระบุ"} /></div><div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#fbfcfa] p-4"><span className="flex size-10 items-center justify-center rounded-full bg-[#dceee7] text-[#467267]"><UserRound size={19} /></span><div><p className="text-xs text-[#789087]">Companion ของคุณ</p><p className="mt-1 text-sm font-semibold text-[#304640]">{companionName || "กำลังรอ Companion ตอบรับ"}</p></div></div><Link href={`/customer/search-companion?request_id=${request.id}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#467267] hover:text-[#18302b]">ดูรายละเอียดคำขอ<ArrowRight size={16} /></Link></div>;
 }
 
 function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {

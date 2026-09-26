@@ -14,7 +14,7 @@ type Profile = {
 
 type BookingRequest = {
 	id: string;
-	purpose: string | null;
+	task: string | null;
 	booking_date: string | null;
 	booking_time: string | null;
 	start_location: string | null;
@@ -48,7 +48,7 @@ const taskLabels: Record<string, string> = {
 async function fetchDashboardData(): Promise<DashboardFetchResult> {
 	const [profilesResult, requestsResult] = await Promise.all([
 		supabase.from("profiles").select("id, full_name, role, created_at").order("created_at", { ascending: false }),
-		supabase.from("booking_requests").select("id, purpose, booking_date, booking_time, start_location, destination, status").order("booking_date", { ascending: false }).order("booking_time", { ascending: false }),
+		supabase.from("booking_request").select("id, task, booking_date, booking_time, start_location, destination, status").order("booking_date", { ascending: false }).order("booking_time", { ascending: false }),
 	]);
 
 	if (profilesResult.error || requestsResult.error) return { error: true };
@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
 
 				<section className="mt-8 rounded-4xl border border-[#e4e8e1] bg-white shadow-[0_15px_45px_rgba(36,67,57,0.06)]">
 					<SectionHeading icon={<BriefcaseBusiness size={19} />} title="คำขอบริการทั้งหมด" detail={`${data.requests.length} งาน`} />
-					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <EmptyState text="ยังไม่มีคำขอบริการ" /> : <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">เส้นทาง</th><th className="px-6 py-4">สถานะ</th></tr></thead><tbody>{data.requests.map((request) => <tr key={request.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">#{request.id.slice(0, 8)}</p></td><td className="px-6 py-5"><p className="text-sm font-medium text-[#304640]">{formatDate(request.booking_date)}</p><p className="mt-1 flex items-center gap-1 text-xs text-[#789087]"><Clock3 size={13} />{formatTime(request.booking_time)}</p></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody></table></div>}
+					{isLoading ? <LoadingState /> : data.requests.length === 0 ? <EmptyState text="ยังไม่มีคำขอบริการ" /> : <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead><tr className="border-y border-[#edf0eb] bg-[#fbfcfa] text-xs font-bold uppercase tracking-widest text-[#789087]"><th className="px-6 py-4">ธุระ</th><th className="px-6 py-4">วันและเวลา</th><th className="px-6 py-4">เส้นทาง</th><th className="px-6 py-4">สถานะ</th></tr></thead><tbody>{data.requests.map((request) => <tr key={request.id} className="border-b border-[#edf0eb] last:border-0"><td className="px-6 py-5"><p className="font-semibold text-[#304640]">{taskLabels[request.task ?? ""] ?? request.task ?? "ธุระทั่วไป"}</p><p className="mt-1 text-xs text-[#9aa9a3]">#{request.id.slice(0, 8)}</p></td><td className="px-6 py-5"><p className="text-sm font-medium text-[#304640]">{formatDate(request.booking_date)}</p><p className="mt-1 flex items-center gap-1 text-xs text-[#789087]"><Clock3 size={13} />{formatTime(request.booking_time)}</p></td><td className="max-w-xs px-6 py-5 text-sm text-[#63746e]"><p className="truncate">{request.start_location || "ไม่ระบุจุดเริ่มต้น"}</p><p className="my-1 text-xs text-[#b0bbb5]">↓</p><p className="truncate">{request.destination || "ไม่ระบุจุดหมาย"}</p></td><td className="px-6 py-5"><StatusBadge status={request.status} /></td></tr>)}</tbody></table></div>}
 				</section>
 			</div>
 		</main>

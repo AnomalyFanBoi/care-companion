@@ -7,7 +7,7 @@ import { supabase } from "../../../lib/supabase";
 
 type BookingRequest = {
 	id: string;
-	purpose: string | null;
+	task: string | null;
 	booking_date: string | null;
 	booking_time: string | null;
 	start_location: string | null;
@@ -51,8 +51,8 @@ export default function CompanionRequestsPage() {
 
 			setUserId(authData.user.id);
 			const { data, error } = await supabase
-				.from("booking_requests")
-				.select("id, purpose, booking_date, booking_time, start_location, destination, duration, details")
+				.from("booking_request")
+				.select("id, task, booking_date, booking_time, start_location, destination, duration, details")
 				.eq("status", "pending")
 				.order("booking_date", { ascending: true })
 				.order("booking_time", { ascending: true });
@@ -77,7 +77,7 @@ export default function CompanionRequestsPage() {
 		setAcceptingId(requestId);
 		setStatus(null);
 		const { data, error } = await supabase
-			.from("booking_requests")
+			.from("booking_request")
 			.update({ status: "accepted", companion_id: userId })
 			.eq("id", requestId)
 			.eq("status", "pending")
@@ -115,7 +115,7 @@ export default function CompanionRequestsPage() {
 
 function RequestCard({ request, isAccepting, onAccept }: { request: BookingRequest; isAccepting: boolean; onAccept: (requestId: string) => void }) {
 	return <article className="rounded-4xl border border-[#e4e8e1] bg-white p-6 shadow-[0_15px_45px_rgba(36,67,57,0.06)] sm:p-7">
-		<div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.purpose ?? ""] ?? request.purpose ?? "ธุระทั่วไป"}</span><h2 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">รายละเอียดงาน</h2></div><div className="rounded-2xl bg-[#f8e6c8] p-3 text-[#a16a2a]"><CalendarDays size={21} /></div></div>
+		<div className="flex flex-wrap items-start justify-between gap-4"><div><span className="inline-flex rounded-full bg-[#edf6f1] px-3 py-1 text-xs font-bold text-[#467267]">{taskLabels[request.task ?? ""] ?? request.task ?? "ธุระทั่วไป"}</span><h2 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">รายละเอียดงาน</h2></div><div className="rounded-2xl bg-[#f8e6c8] p-3 text-[#a16a2a]"><CalendarDays size={21} /></div></div>
 		<div className="mt-6 grid gap-4 sm:grid-cols-2"><Detail icon={<CalendarDays size={17} />} label="วัน" value={formatDate(request.booking_date)} /><Detail icon={<Clock3 size={17} />} label="เวลา" value={formatTime(request.booking_time)} /><Detail icon={<MapPin size={17} />} label="จุดเริ่มต้น" value={request.start_location ?? "ไม่ได้ระบุ"} /><Detail icon={<Navigation size={17} />} label="จุดหมาย" value={request.destination ?? "ไม่ได้ระบุ"} /></div>
 		<div className="mt-5 grid gap-4 border-t border-[#edf0eb] pt-5 sm:grid-cols-2"><Detail label="วัตถุประสงค์ธุระ" value={request.details ?? "ไม่ได้ระบุรายละเอียดเพิ่มเติม"} /><Detail label="ระยะเวลา" value={durationLabels[request.duration ?? ""] ?? request.duration ?? "ไม่ได้ระบุ"} /></div>
 		<button type="button" onClick={() => onAccept(request.id)} disabled={isAccepting} className="mt-7 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-[#18302b] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#26453d] disabled:cursor-not-allowed disabled:opacity-60">{isAccepting ? <LoaderCircle size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}{isAccepting ? "กำลังตอบรับ..." : "ตอบรับการเป็นผู้ช่วย"}</button>

@@ -15,16 +15,16 @@ const avatarExtensions: Record<string, string> = {
 
 type ProfileValues = {
 	bio: string;
-	service_areas: string;
-	skills: string;
+	service_area: string;
+	skill: string;
 	availability: string;
 };
 
 type CompanionProfileDB = {
 	user_id: string;
 	bio: string | null;
-	service_areas: string[] | null;
-	skills: string[] | null;
+	service_area: string[] | null;
+	skill: string[] | null;
 	availability: string | null;
 };
 
@@ -32,8 +32,8 @@ type Notice = { type: "success" | "error"; message: string };
 
 const emptyProfile: ProfileValues = {
 	bio: "",
-	service_areas: "",
-	skills: "",
+	service_area: "",
+	skill: "",
 	availability: "",
 };
 
@@ -70,7 +70,7 @@ export default function CompanionProfilePage() {
 
 			setUserId(authData.user.id);
 			const [companionResult, profileResult] = await Promise.all([
-				supabase.from("companion_profiles").select("user_id, bio, service_areas, skills, availability").eq("user_id", authData.user.id).maybeSingle(),
+				supabase.from("companion_profiles").select("user_id, bio, service_area, skill, availability").eq("user_id", authData.user.id).maybeSingle(),
 				supabase.from("profiles").select("avatar_url").eq("id", authData.user.id).maybeSingle(),
 			]);
 
@@ -86,8 +86,8 @@ export default function CompanionProfilePage() {
 				// แปลง Array จาก DB กลับมาเป็น String คั่นด้วย comma เพื่อแสดงใน Input
 				setValues({
 					bio: profile.bio ?? "",
-					service_areas: Array.isArray(profile.service_areas) ? profile.service_areas.join(", ") : "",
-					skills: Array.isArray(profile.skills) ? profile.skills.join(", ") : "",
+					service_area: Array.isArray(profile.service_area) ? profile.service_area.join(", ") : "",
+					skill: Array.isArray(profile.skill) ? profile.skill.join(", ") : "",
 					availability: profile.availability ?? "",
 				});
 				setHasProfile(true);
@@ -178,8 +178,8 @@ export default function CompanionProfilePage() {
 		const payload = {
 			user_id: userId,
 			bio: values.bio.trim(),
-			service_areas: toArray(values.service_areas), // แปลงเป็น string[] สำหรับ PostgreSQL text[]
-			skills: toArray(values.skills),               // แปลงเป็น string[] สำหรับ PostgreSQL text[]
+			service_area: toArray(values.service_area), // แปลงเป็น string[] สำหรับ PostgreSQL text[]
+			skill: toArray(values.skill),               // แปลงเป็น string[] สำหรับ PostgreSQL text[]
 			availability: values.availability.trim(),
 		};
 
@@ -237,8 +237,8 @@ export default function CompanionProfilePage() {
 						</div>
 						<div className="space-y-6">
 							<Field label="แนะนำตัว" icon={<Sparkles size={17} />} hint="เล่าประสบการณ์หรือรูปแบบการช่วยเหลือของคุณ"><textarea value={values.bio} onChange={(event) => updateValue("bio", event.target.value)} rows={5} placeholder="แนะนำตัวให้ Customer รู้จักคุณ" className={`${inputClass} resize-y`} /></Field>
-							<Field label="พื้นที่บริการ" icon={<MapPin size={17} />} hint="ระบุพื้นที่หรือจังหวัดคั่นด้วยจุลภาค (,) เช่น กรุงเทพ, นนทบุรี"><input value={values.service_areas} onChange={(event) => updateValue("service_areas", event.target.value)} placeholder="เช่น กรุงเทพ, นนทบุรี" className={inputClass} /></Field>
-							<Field label="ทักษะและความเชี่ยวชาญ" icon={<ShieldCheck size={17} />} hint="บอกความสามารถคั่นด้วยจุลภาค (,) เช่น ขับรถ, ภาษาอังกฤษ, พาไปโรงพยาบาล"><input value={values.skills} onChange={(event) => updateValue("skills", event.target.value)} placeholder="เช่น ขับรถ, ภาษาอังกฤษ, พาไปโรงพยาบาล" className={inputClass} /></Field>
+							<Field label="พื้นที่บริการ" icon={<MapPin size={17} />} hint="ระบุพื้นที่หรือจังหวัดคั่นด้วยจุลภาค (,) เช่น กรุงเทพ, นนทบุรี"><input value={values.service_area} onChange={(event) => updateValue("service_area", event.target.value)} placeholder="เช่น กรุงเทพ, นนทบุรี" className={inputClass} /></Field>
+							<Field label="ทักษะและความเชี่ยวชาญ" icon={<ShieldCheck size={17} />} hint="บอกความสามารถคั่นด้วยจุลภาค (,) เช่น ขับรถ, ภาษาอังกฤษ, พาไปโรงพยาบาล"><input value={values.skill} onChange={(event) => updateValue("skill", event.target.value)} placeholder="เช่น ขับรถ, ภาษาอังกฤษ, พาไปโรงพยาบาล" className={inputClass} /></Field>
 							<Field label="ช่วงเวลาที่สะดวกรับงาน" icon={<CalendarClock size={17} />} hint="ระบุวันหรือช่วงเวลาที่คุณสะดวก"><input value={values.availability} onChange={(event) => updateValue("availability", event.target.value)} placeholder="เช่น วันธรรมดาช่วงเช้า, เสาร์-อาทิตย์" className={inputClass} /></Field>
 						</div>
 						<div className="mt-8 flex flex-col-reverse gap-3 border-t border-[#edf0eb] pt-6 sm:flex-row sm:justify-between">
