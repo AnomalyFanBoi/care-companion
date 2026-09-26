@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, BriefcaseBusiness, CheckCircle2, Clock3, LoaderCircle, RefreshCw, ShieldCheck, TriangleAlert, UserRound, Users } from "lucide-react";
